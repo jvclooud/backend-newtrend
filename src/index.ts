@@ -95,7 +95,22 @@ servidor.get("/albuns/filtro/:campo/:valor", async (request: FastifyRequest, rep
         reply.status(500).send({ mensagem: "Erro ao buscar os álbuns." });
     }
 });
-
+servidor.delete("/albuns/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as any;
+    try {
+        const conn = await mysql.createConnection({
+            host: 'localhost',
+            user: 'root',
+            password: '',
+            database: 'newtrend',
+            port: 3306
+        });
+        await conn.query('DELETE FROM album WHERE id = ?', [id]);
+        reply.status(200).send({ mensagem: "Álbum apagado com sucesso!" });
+    } catch (erro: any) {
+        reply.status(500).send({ mensagem: "Erro ao apagar o álbum." });
+    }
+});
 
 const start = async () => {
   try {
