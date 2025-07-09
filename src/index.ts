@@ -7,13 +7,12 @@ const servidor = fastify();
 servidor.register(cors);
 
 
-// Teste de rota
+
 servidor.get("/", (_request: FastifyRequest, reply: FastifyReply) => {
     reply.send("Fastify está Funcionando!");
 });
 
 
-// Criar novo álbum
 servidor.post("/albuns", async (request: FastifyRequest, reply: FastifyReply) => {
     const { titulo, artista, preco, ano_lancamento, genero } = request.body as any;
     try {
