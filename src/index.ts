@@ -4,7 +4,10 @@ import cors from '@fastify/cors';
 
 
 const servidor = fastify();
-servidor.register(cors);
+servidor.register(cors, {
+  origin: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE']
+});
 
 
 
@@ -30,6 +33,7 @@ servidor.post("/albuns", async (request: FastifyRequest, reply: FastifyReply) =>
         const [dados] = results;
         reply.status(200).send(dados);
     } catch (erro: any) {
+        console.error(erro); // <-- Adicione esta linha para mostrar o erro no terminal
         if (erro.code === "ECONNREFUSED") {
             reply.status(400).send({ mensagem: "ERRO: LIGUE SUA INSTANCIA DO MYSQL." });
         } else if (erro.code === "ER_BAD_DB_ERROR") {
@@ -96,21 +100,60 @@ servidor.get("/albuns/filtro/:campo/:valor", async (request: FastifyRequest, rep
     }
 });
 servidor.delete("/albuns/:id", async (request: FastifyRequest, reply: FastifyReply) => {
-    const { id } = request.params as any;
-    try {
-        const conn = await mysql.createConnection({
-            host: 'localhost',
-            user: 'root',
-            password: '',
-            database: 'newtrend',
-            port: 3306
-        });
-        await conn.query('DELETE FROM album WHERE id = ?', [id]);
-        reply.status(200).send({ mensagem: "Álbum apagado com sucesso!" });
-    } catch (erro: any) {
-        reply.status(500).send({ mensagem: "Erro ao apagar o álbum." });
+  const { id } = request.params as any;
+
+  try {
+    const conn = await mysql.createConnection({
+      host: 'localhost',
+      user: 'root',
+      password: '',
+      database: 'newtrend',
+      port: 3306
+    });
+
+    const [resultado]: any = await conn.query('DELETE FROM album WHERE id = ?', [id]);
+
+    if (resultado.affectedRows === 0) {
+      return reply.status(404).send({ mensagem: "Álbum não encontrado para exclusão." });
     }
+
+    reply.status(200).send({ mensagem: "Álbum apagado com sucesso!" });
+
+  } catch (erro: any) {
+    console.error(erro);
+    reply.status(500).send({ mensagem: "Erro ao apagar o álbum." });
+  }
 });
+// Atualizar álbum
+servidor.put("/albuns/:id", async (request: FastifyRequest, reply: FastifyReply) => {
+  const { id } = request.params as any;
+  const { titulo, artista, preco, ano_lancamento, genero } = request.body as any;
+
+  try {
+    const conn = await mysql.createConnection({
+      host: 'localhost',
+      user: 'root',
+      password: '',
+      database: 'newtrend',
+      port: 3306
+    });
+
+    const [resultado]: any = await conn.query(
+      'UPDATE album SET titulo = ?, artista = ?, preco = ?, ano_lancamento = ?, genero = ? WHERE id = ?',
+      [titulo, artista, preco, ano_lancamento, genero, id]
+    );
+
+    if (resultado.affectedRows === 0) {
+      return reply.status(404).send({ mensagem: "Álbum não encontrado para atualização." });
+    }
+
+    reply.status(200).send({ mensagem: "Álbum atualizado com sucesso!" });
+  } catch (erro: any) {
+    console.error(erro);
+    reply.status(500).send({ mensagem: "Erro ao atualizar o álbum." });
+  }
+});
+
 
 const start = async () => {
   try {
